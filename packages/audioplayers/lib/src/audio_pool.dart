@@ -87,6 +87,9 @@ class AudioPool {
   Future<StopFunction> start({double volume = 1.0}) async {
     return _lock.synchronized(() async {
       if (availablePlayers.isEmpty) {
+        if (currentPlayers.length >= maxPlayers) {
+          return () async {};
+        }
         availablePlayers.add(await _createNewAudioPlayer());
       }
       final player = availablePlayers.removeAt(0);
@@ -102,11 +105,7 @@ class AudioPool {
           if (removedPlayer != null) {
             subscription.cancel();
             await removedPlayer.stop();
-            if (availablePlayers.length >= maxPlayers) {
-              await removedPlayer.release();
-            } else {
-              availablePlayers.add(removedPlayer);
-            }
+            availablePlayers.add(removedPlayer);
           }
         });
       }
